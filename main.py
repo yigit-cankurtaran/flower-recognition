@@ -2,6 +2,9 @@ import os
 import cv2
 import numpy as np
 from sklearn.model_selection import train_test_split
+from keras.utils import to_categorical
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 
 # define constants
 DATA_DIR = 'flowers'
@@ -38,3 +41,27 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # Normalize pixel values to be between 0 and 1
 X_train, X_test = X_train / 255.0, X_test / 255.0
+
+# Create the convolutional base
+model = Sequential()
+model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(
+    IMG_SIZE, IMG_SIZE, 3)))  # 32 filters, 3x3 kernel
+model.add(MaxPooling2D((2, 2)))  # 2x2 pooling
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D((2, 2)))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(Flatten())
+model.add(Dense(64, activation='relu'))
+model.add(Dense(NUM_CLASSES, activation='softmax'))
+
+# Compile and train the model
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+model.fit(X_train, y_train, epochs=10)
+
+# Evaluate the model
+test_loss, test_acc = model.evaluate(X_test, y_test)
+print('Test accuracy:', test_acc)
+
+# Save the model
+model.save('flowers_model.h5')
