@@ -2,7 +2,6 @@ import os
 import cv2
 import numpy as np
 from sklearn.model_selection import train_test_split
-from keras.utils import to_categorical
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 
@@ -62,6 +61,10 @@ model.fit(X_train, y_train, epochs=10)
 # Evaluate the model
 test_loss, test_acc = model.evaluate(X_test, y_test)
 print('Test accuracy:', test_acc)
+print('Test loss:', test_loss)
+
+# print the validation accuracy
+print('Validation accuracy:', model.evaluate(X_test, y_test)[1])
 
 # Save the model
 model.save('flowers_model.h5')
