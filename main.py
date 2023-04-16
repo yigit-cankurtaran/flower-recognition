@@ -4,6 +4,9 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from keras.layers import Dropout
+from keras import regularizers
+from keras.preprocessing.image import ImageDataGenerator
 
 # define constants
 DATA_DIR = 'flowers'
@@ -48,23 +51,23 @@ model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(
 model.add(MaxPooling2D((2, 2)))  # 2x2 pooling
 model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
-model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(Conv2D(128, (3, 3), activation='relu'))
+model.add(MaxPooling2D((2, 2)))
+model.add(Conv2D(128, (3, 3), activation='relu'))
 model.add(Flatten())
-model.add(Dense(64, activation='relu'))
+model.add(Dense(256, activation='relu',
+          kernel_regularizer=regularizers.l2(0.001)))
+model.add(Dropout(0.5))
 model.add(Dense(NUM_CLASSES, activation='softmax'))
+
+# Data augmentation
+datagen = ImageDataGenerator(rotation_range=40, width_shift_range=0.2, height_shift_range=0.2,
+                             shear_range=0.2, zoom_range=0.2, horizontal_flip=True,
+                             fill_mode='nearest')
 
 # Compile and train the model
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-model.fit(X_train, y_train, epochs=10)
 
-# Evaluate the model
-test_loss, test_acc = model.evaluate(X_test, y_test)
-print('Test accuracy:', test_acc)
-print('Test loss:', test_loss)
-
-# print the validation accuracy
-print('Validation accuracy:', model.evaluate(X_test, y_test)[1])
-
-# Save the model
-model.save('flowers_model.h5')
+history = model.fit(datagen.flow(X_train, y_train, batch_size=32),
+                    epochs=100, validation_data=(X_test, y_test))
