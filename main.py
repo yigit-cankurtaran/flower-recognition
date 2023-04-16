@@ -7,6 +7,7 @@ from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from keras.layers import Dropout
 from keras import regularizers
 from keras.preprocessing.image import ImageDataGenerator
+from keras.models import load_model
 
 # define constants
 DATA_DIR = 'flowers'
@@ -44,21 +45,29 @@ X_train, X_test, y_train, y_test = train_test_split(
 # Normalize pixel values to be between 0 and 1
 X_train, X_test = X_train / 255.0, X_test / 255.0
 
-# Create the convolutional base
-model = Sequential()
-model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(
-    IMG_SIZE, IMG_SIZE, 3)))  # 32 filters, 3x3 kernel
-model.add(MaxPooling2D((2, 2)))  # 2x2 pooling
-model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(MaxPooling2D((2, 2)))
-model.add(Conv2D(128, (3, 3), activation='relu'))
-model.add(MaxPooling2D((2, 2)))
-model.add(Conv2D(128, (3, 3), activation='relu'))
-model.add(Flatten())
-model.add(Dense(256, activation='relu',
-          kernel_regularizer=regularizers.l2(0.001)))
-model.add(Dropout(0.5))
-model.add(Dense(NUM_CLASSES, activation='softmax'))
+model_filename = 'flowers_model.h5'
+
+#  If 'flowers_model.h5' exists, load that model. If not, run the model definition code.
+if os.path.exists(model_filename):
+    print("Loading saved model...")
+    model = load_model(model_filename)
+else:
+    print("Creating new model.")
+    # Create the convolutional base
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(
+        IMG_SIZE, IMG_SIZE, 3)))  # 32 filters, 3x3 kernel
+    model.add(MaxPooling2D((2, 2)))  # 2x2 pooling
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Conv2D(128, (3, 3), activation='relu'))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Conv2D(128, (3, 3), activation='relu'))
+    model.add(Flatten())
+    model.add(Dense(256, activation='relu',
+              kernel_regularizer=regularizers.l2(0.001)))
+    model.add(Dropout(0.5))
+    model.add(Dense(NUM_CLASSES, activation='softmax'))
 
 # Data augmentation
 datagen = ImageDataGenerator(rotation_range=40, width_shift_range=0.2, height_shift_range=0.2,
@@ -70,4 +79,7 @@ model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 history = model.fit(datagen.flow(X_train, y_train, batch_size=32),
-                    epochs=100, validation_data=(X_test, y_test))
+                    epochs=10, validation_data=(X_test, y_test))
+
+# Save the model
+model.save(model_filename)
